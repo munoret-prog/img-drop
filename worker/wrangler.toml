@@ -1,0 +1,11 @@
+name = "img-drop"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+GITHUB_OWNER = "munoret-prog"
+GITHUB_REPO = "img-drop"
+GITHUB_BRANCH = "main"
+
+# Секреты (не в этом файле, задаются отдельно):
+#   wrangler secret put GITHUB_TOKEN

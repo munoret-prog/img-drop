@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>img-drop — быстрая ссылка на картинку</title>
+<style>
+  :root {
+    --yellow: #FFCC00;
+    --ink: #1A1A1A;
+    --bg: #FFFFFF;
+    --muted: #8a8a8a;
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+  }
+  p.sub {
+    color: var(--muted);
+    margin: 0 0 28px;
+  }
+  #dropzone {
+    border: 2px dashed #e5c700;
+    background: #fffbe6;
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  #dropzone.drag {
+    background: #fff2b3;
+    border-color: var(--yellow);
+  }
+  #dropzone svg { width: 40px; height: 40px; margin-bottom: 12px; }
+  #dropzone .hint { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  #fileInput { display: none; }
+
+  #result { margin-top: 24px; display: none; }
+  #result.show { display: block; }
+  #preview {
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 12px;
+    display: block;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .link-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #linkOut {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
+    font-size: 14px;
+    color: var(--ink);
+    background: #fafafa;
+  }
+  button {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--yellow);
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { filter: brightness(0.95); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  #status { margin-top: 16px; font-size: 14px; color: var(--muted); min-height: 20px; }
+  #status.error { color: #c0392b; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Закинь картинку — забери ссылку</h1>
+    <p class="sub">Перетащи файл или нажми, чтобы выбрать</p>
+
+    <div id="dropzone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.5">
+        <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>Перетащи изображение сюда</div>
+      <div class="hint">или нажми, чтобы выбрать файл (до 10 МБ)</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <div id="status"></div>
+
+    <div id="result">
+      <img id="preview" alt="превью">
+      <div class="link-row">
+        <input id="linkOut" type="text" readonly>
+        <button id="copyBtn">Скопировать ссылку</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Подставляется при деплое / можно захардкодить URL Cloudflare Worker
+  const WORKER_URL = "__WORKER_URL__";
+
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+  const statusEl = document.getElementById("status");
+  const resultEl = document.getElementById("result");
+  const previewEl = document.getElementById("preview");
+  const linkOut = document.getElementById("linkOut");
+  const copyBtn = document.getElementById("copyBtn");
+
+  dropzone.addEventListener("click", () => fileInput.click());
+
+  ["dragenter", "dragover"].forEach(evt =>
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.add("drag");
+    })
+  );
+  ["dragleave", "drop"].forEach(evt =>
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag");
+    })
+  );
+  dropzone.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function setStatus(text, isError) {
+    statusEl.textContent = text || "";
+    statusEl.classList.toggle("error", !!isError);
+  }
+
+  async function handleFile(file) {
+    if (!file.type.startsWith("image/")) {
+      setStatus("Это не похоже на картинку", true);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setStatus("Файл больше 10 МБ", true);
+      return;
+    }
+    resultEl.classList.remove("show");
+    setStatus("Загружаю…");
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+
+      const resp = await fetch(WORKER_URL, { method: "POST", body: form });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || `Ошибка ${resp.status}`);
+      }
+      const data = await resp.json();
+      previewEl.src = data.url;
+      linkOut.value = data.url;
+      resultEl.classList.add("show");
+      setStatus("Готово");
+    } catch (err) {
+      setStatus("Не получилось загрузить: " + err.message, true);
+    }
+  }
+
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(linkOut.value);
+      copyBtn.textContent = "Скопировано ✓";
+      setTimeout(() => (copyBtn.textContent = "Скопировать ссылку"), 1500);
+    } catch {
+      linkOut.select();
+      document.execCommand("copy");
+    }
+  });
+</script>
+</body>
+</html>
