@@ -24,8 +24,19 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--ink);
     padding: 24px;
+    overflow: hidden;
+  }
+  #snow {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
   }
   .card {
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 520px;
     text-align: center;
@@ -107,6 +118,7 @@
 </style>
 </head>
 <body>
+  <canvas id="snow"></canvas>
   <div class="card">
     <img src="https://cdn.jsdelivr.net/gh/munoret-prog/img-drop@main/images/smart-logo.png" alt="Smart" style="width:120px;height:120px;margin:0 auto 8px;display:block;">
     <p class="brand">Лядник DropMeFiles_version_1.0</p>
@@ -135,6 +147,58 @@
   </div>
 
 <script>
+  // Падающий снег — лёгкий canvas, не мешает кликам (pointer-events: none)
+  (function snowfall() {
+    const canvas = document.getElementById("snow");
+    const ctx = canvas.getContext("2d");
+    let flakes = [];
+    let w, h;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const COUNT = Math.min(120, Math.round((window.innerWidth * window.innerHeight) / 9000));
+    for (let i = 0; i < COUNT; i++) {
+      flakes.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 1.5 + Math.random() * 3,
+        speed: 0.5 + Math.random() * 1.5,
+        drift: Math.random() * 1 - 0.5,
+        sway: Math.random() * Math.PI * 2,
+        swaySpeed: 0.005 + Math.random() * 0.015,
+      });
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, w, h);
+      // Фон страницы жёлтый — белый снег на нём хорошо виден
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.shadowColor = "rgba(255, 255, 255, 0.6)";
+      ctx.shadowBlur = 3;
+      for (const f of flakes) {
+        f.sway += f.swaySpeed;
+        f.x += f.drift + Math.sin(f.sway) * 0.4;
+        f.y += f.speed;
+        if (f.y > h + 5) {
+          f.y = -5;
+          f.x = Math.random() * w;
+        }
+        if (f.x > w + 5) f.x = -5;
+        if (f.x < -5) f.x = w + 5;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
   const WORKER_URL = "https://img-drop.munoret.workers.dev";
 
   const dropzone = document.getElementById("dropzone");
