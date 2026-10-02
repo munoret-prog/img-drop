@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <style>
+    .table { fill: #ffffff; stroke: #000000; stroke-width: 2; }
+    .num { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #000000; text-anchor: middle; }
+    .cap { font-family: Arial, sans-serif; font-size: 13px; fill: #000000; text-anchor: middle; }
+  </style>
+  
+  <rect width="100%" height="100%" fill="#ffffff" />
+
+  <!-- Ряд 1 (Сверху) -->
+  <!-- Стол 1 -->
+  <rect x="120" y="80" width="100" height="70" rx="4" class="table" />
+  <text x="170" y="112" class="num">№1</text>
+  <text x="170" y="132" class="cap">4 места</text>
+
+  <!-- Стол 2 -->
+  <rect x="350" y="80" width="100" height="70" rx="4" class="table" />
+  <text x="400" y="112" class="num">№2</text>
+  <text x="400" y="132" class="cap">4 места</text>
+
+  <!-- Стол 3 -->
+  <rect x="580" y="80" width="100" height="70" rx="4" class="table" />
+  <text x="630" y="112" class="num">№3</text>
+  <text x="630" y="132" class="cap">4 места</text>
+
+  <!-- Ряд 2 (Центр) -->
+  <!-- Стол 4 -->
+  <rect x="120" y="250" width="100" height="70" rx="4" class="table" />
+  <text x="170" y="282" class="num">№4</text>
+  <text x="170" y="302" class="cap">4 места</text>
+
+  <!-- Стол 5 -->
+  <rect x="350" y="250" width="100" height="70" rx="4" class="table" />
+  <text x="400" y="282" class="num">№5</text>
+  <text x="400" y="302" class="cap">4 места</text>
+
+  <!-- Стол 6 -->
+  <rect x="580" y="250" width="100" height="70" rx="4" class="table" />
+  <text x="630" y="282" class="num">№6</text>
+  <text x="630" y="302" class="cap">4 места</text>
+
+  <!-- Ряд 3 (Снизу) -->
+  <!-- Стол 7 -->
+  <rect x="235" y="420" width="100" height="70" rx="4" class="table" />
+  <text x="285" y="452" class="num">№7</text>
+  <text x="285" y="472" class="cap">4 места</text>
+
+  <!-- Стол 8 -->
+  <rect x="465" y="420" width="100" height="70" rx="4" class="table" />
+  <text x="515" y="452" class="num">№8</text>
+  <text x="515" y="472" class="cap">4 места</text>
+</svg>
